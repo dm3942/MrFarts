@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local Claude Code / editor config
+.claude/
+
+# Third-party reference art, not part of the game
+Archive/Prince of persia.jpg
