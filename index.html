@@ -215,10 +215,44 @@ const Voice = {
     const pref = [/child|kid|junior/i, /zira|aria|jenny|samantha|female|woman|girl/i, /en/i];
     for (const re of pref) { const v = vs.find(v => re.test(v.name) || re.test(v.lang)); if (v) { this.kidVoice = v; break; } }
   },
+  // recorded clips (sounds/*.wav) replace text-to-speech for these lines; several files = random pick.
+  // A file that is missing or fails to load falls back to text-to-speech.
+  clips: {
+    'farty power!': ['farty_power.wav'],
+    'stinky!': ['stinky_v1.wav', 'stinky_v2.wav'],
+    'i think i pooped my pants': ['I_think_i_pooped_my_pants.wav'],
+    'extra life!': ['extra_life.wav'],
+    'plug pulled!': ['plug_pulled.wav'],
+    'big diamond!': ['big_diamond.wav'],
+    'famous painting!': ['famous_painting.wav'],
+    'jewelled crown!': ['jewelled_crown.wav'],
+    'dinosaur bone!': ['dinosaur_bone.wav'],
+    'treasure chest!': ['treasure_chest.wav'],
+    'mummy!': ['mummy.wav'],
+    'gold bars!': ['gold_bars.wav'],
+    'marble statue!': ['marble_statue.wav'],
+    'ancient vase!': ['ancient_vase.wav'],
+    'pharaoh mask!': ['pharaoh_mask.wav'],
+    'silver trophy!': ['silver_trophy.wav'],
+  },
+  missing: new Set(), audio: null,
+  key(text) { return text.toLowerCase().trim(); },
   say(text, pitch = 1, opts = {}) {
-    if (!('speechSynthesis' in window)) return;
     if (!opts.force && performance.now() - this.last < 1500) return;
+    const files = (this.clips[this.key(text)] || []).filter(f => !this.missing.has(f));
+    if (files.length) {
+      this.last = performance.now();
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      if (this.audio) this.audio.pause();
+      const f = files[Math.floor(Math.random() * files.length)], a = this.audio = new Audio('sounds/' + f); a.volume = 0.9;
+      const fallback = () => { if (this.missing.has(f)) return; this.missing.add(f); if (this.audio === a) { this.last = 0; this.say(text, pitch, { ...opts, force: true }); } };
+      a.addEventListener('error', fallback);
+      a.play().catch(e => { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') fallback(); });
+      return;
+    }
+    if (!('speechSynthesis' in window)) return;
     this.last = performance.now();
+    if (this.audio) { this.audio.pause(); this.audio = null; }
     const u = new SpeechSynthesisUtterance(text); u.pitch = pitch; u.rate = opts.rate || 1.05; u.volume = 0.9;
     if (opts.kid && this.kidVoice) u.voice = this.kidVoice;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
