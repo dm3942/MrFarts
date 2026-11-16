@@ -37,6 +37,35 @@
   #levels .panel button { display:block; width:100%; margin:6px 0; font-family:inherit; font-size:9px; padding:7px 12px; background:#2c3344; color:#e8e4d0; border:2px solid #6c7890; cursor:pointer; text-align:left; }
   #levels .panel button:hover { background:#4c5668; }
   #levels .panel h2 { margin-bottom:10px; }
+  #player { left:16px; top:58px; color:#9ab8d8; font-size:9px; }
+  #titleRow { display:flex; gap:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap; max-width:96vw; }
+  #title .panel { max-width:600px; }
+  #title { overflow-y:auto; }
+  #startBox { margin-top:14px; }
+  #nameInput { font-family:inherit; font-size:12px; width:300px; max-width:80vw; padding:8px 10px; background:#0a0a12; color:#ffe070; border:2px solid #8ee04a; text-transform:uppercase; outline:none; }
+  #nameInput::placeholder { color:#5a6478; }
+  .diffs { display:flex; gap:6px; justify-content:center; margin:12px 0 4px; flex-wrap:wrap; }
+  .diffs button { font-family:inherit; font-size:8px; padding:6px 8px; background:#2c3344; color:#e8e4d0; border:2px solid #6c7890; cursor:pointer; }
+  .diffs button.on { background:#8ee04a; color:#0a0a12; border-color:#d8ffb0; }
+  #diffNote { font-size:8px; color:#9ab8d8; min-height:12px; }
+  .scores { min-width:250px; }
+  .scores h2 { margin-bottom:10px !important; }
+  .scores ol { list-style:none; padding:0; margin:0; font-size:9px; line-height:2.1; text-align:left; }
+  .scores li { display:flex; gap:10px; }
+  .scores li .n { flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .scores li .s { color:#8ee04a; }
+  .scores li .r { color:#6c7890; }
+  .scores li.me { color:#ffe070; }
+  .scores .empty { font-size:9px; color:#6c7890; }
+  #goRank, #winRank { font-size:11px; color:#ffe070; margin:0 0 10px; }
+  #goTable, #winTable { margin:4px 0 6px; }
+  .overlay .sub { font-size:9px; color:#9ab8d8; margin-top:10px; }
+  @media (max-height: 780px) { #hero { width:100px; margin-bottom:-10px; } #title h1 { font-size:30px; margin-bottom:8px; } #title .panel p { margin:4px 0; line-height:1.7; } }
+  #music { position:fixed; left:16px; bottom:8px; z-index:20; display:flex; align-items:center; gap:8px; }
+  #musicBtn { font-family:inherit; font-size:8px; color:#e8e4d0; background:#2c3344; border:2px solid #6c7890; padding:4px 7px; box-shadow:2px 2px 0 #000; cursor:pointer; min-width:96px; }
+  #musicBtn:hover { background:#3e4759; }
+  #musicBtn.off { color:#8a94a8; }
+  #musicVol { width:90px; accent-color:#8ee04a; cursor:pointer; }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -45,6 +74,7 @@
 <div id="hud">
   <div id="score" class="box">SCORE 0</div>
   <div id="lives" class="box">♥♥♥♥♥</div>
+  <div id="player" class="box"></div>
   <div id="power" class="box"></div>
   <div id="zone" class="box"></div>
   <button id="pick" class="box hidden">LEVEL ▾</button>
@@ -55,28 +85,44 @@
 <div id="title" class="overlay">
   <img id="hero" alt="">
   <h1>MR FARTS</h1>
+  <div id="titleRow">
   <div class="panel">
   <h2 id="subtitle">ZONE 1 - THE PARK - LEVEL 1</h2>
   <p><span class="key">&larr;</span><span class="key">&rarr;</span> run &nbsp; <span class="key">SPACE</span> jump &nbsp; <span class="key">&darr;</span> crouch</p>
   <p>Every step lets out a puff. Beans unlock the FART BOOST double jump. Vegetables kill your gas for a while.</p>
   <p>Collect the treats of each zone and hunt for the hidden museum piece. Walking under a tree makes its bird faint. Jump over it and the bird sings. Finish without damage or fainted birds for bonus points.</p>
   <p id="loading">LOADING...</p>
-  <p class="go hidden" id="pressStart">PRESS SPACE TO START</p>
-  <p class="pick hidden" id="pickHint">[ and ] to choose a level</p>
+  <div id="startBox" class="hidden">
+    <input id="nameInput" maxlength="14" autocomplete="off" spellcheck="false" placeholder="TYPE YOUR NAME">
+    <div class="diffs" id="diffs"></div>
+    <p id="diffNote"></p>
+    <p class="go" id="pressStart">PRESS ENTER TO START</p>
+    <p class="pick">No name? Just press ENTER for a random one. <span class="key">&uarr;</span><span class="key">&darr;</span> difficulty &nbsp; [ and ] level</p>
+  </div>
+  </div>
+  <div class="panel scores"><h2 id="hsTitle">HIGH SCORES</h2><div id="hsTable"></div></div>
   </div>
 </div>
 <div id="levels" class="overlay hidden"><div class="panel"><h2>CHOOSE A LEVEL</h2><div id="levelList"></div></div></div>
 <div id="gameover" class="overlay hidden">
   <h1 style="color:#e05050;text-shadow:4px 4px 0 #5a1414">CAUGHT!</h1>
   <h2 id="goScore">SCORE 0</h2>
-  <p class="go">PRESS ENTER TO TRY AGAIN</p>
+  <p id="goRank"></p>
+  <div class="scores" id="goTable"></div>
+  <p class="go" id="goNext">PRESS ENTER TO RESTART THE ZONE</p>
+  <p class="sub">ESC: change player or difficulty</p>
 </div>
 <div id="win" class="overlay hidden">
   <h1 id="winTitle">LEVEL COMPLETE!</h1>
   <ul id="winLines"></ul>
   <h2 id="winScore">SCORE 0</h2>
+  <p id="winRank" class="hidden"></p>
+  <div class="scores hidden" id="winTable"></div>
   <p id="winNext" class="go">PRESS ENTER FOR THE NEXT LEVEL</p>
 </div>
+
+<!-- music controls sit above every overlay so they work on the title, game-over and level-complete screens -->
+<div id="music"><button id="musicBtn" title="Turn the music on or off (M)">MUSIC ON</button><input id="musicVol" type="range" min="0" max="100" step="5" title="Music volume" aria-label="Music volume"></div>
 
 <script src="lib/phaser.min.js"></script>
 <script src="sprites.js"></script>
@@ -90,7 +136,7 @@ const RUN = 180, JUMP_V = 600, BOOST_V = 500, GRAV = 1400, SWIM_GRAV = 230;
 const $ = id => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const SAVE = { score: 0, lives: 5 };
+const SAVE = { score: 0, lives: 5, name: '', diff: 'medium', ranked: true };
 const NAMES = { pancakes: 'PANCAKES', banana: 'BANANA', pizza: 'PIZZA', donut: 'DONUT', hotdog: 'HOT DOG', coffee: 'COFFEE', icecream: 'ICE CREAM', fishchips: 'FISH & CHIPS',
   carrot: 'CARROT', broccoli: 'BROCCOLI', capsicum: 'CAPSICUM', tomato: 'TOMATO',
   diamond: 'BIG DIAMOND', painting: 'FAMOUS PAINTING', crown: 'JEWELLED CROWN', bone: 'DINOSAUR BONE', chest: 'TREASURE CHEST', mummy: 'MUMMY', gold: 'GOLD BARS', statue: 'MARBLE STATUE', vase: 'ANCIENT VASE', mask: 'PHARAOH MASK', silver: 'SILVER TROPHY' };
@@ -171,6 +217,73 @@ const ZONES = [
   ] },
 ];
 const LEVELS = []; ZONES.forEach((z, zi) => z.levels.forEach((l, li) => { if (l.rareType) l.rare = [l.rare[0], l.rare[1], l.rareType]; LEVELS.push({ ...l, zone: z, zi, li, title: `ZONE ${zi + 1} - ${z.name} - LEVEL ${li + 1}` }); }));
+
+// ---------------------------------------------------------------- difficulty: hard is the full layout, easier ones keep fewer life-taking hazards
+const DIFFS = [
+  { id: 'beginner', label: 'BEGINNER', keep: 0.25, note: 'A quarter of the hazards. Learn the ropes.' },
+  { id: 'easy',     label: 'EASY',     keep: 0.5,  note: 'Half the hazards.' },
+  { id: 'medium',   label: 'MEDIUM',   keep: 0.75, note: 'Three quarters of the hazards.' },
+  { id: 'hard',     label: 'HARD',     keep: 1,    note: 'Every hazard. The full game.' },
+];
+const diffOf = id => DIFFS.find(d => d.id === id) || DIFFS[2];
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+SAVE.diff = diffOf(store.get('mrfarts.difficulty')).id;
+// Keep an evenly spaced share of every hazard that can take a life (pits stay as they are).
+function applyDifficulty(L, diffId) {
+  const keep = diffOf(diffId).keep; if (keep >= 1) return L;
+  const hz = [], mid = v => (v[0] + v[1]) / 2;
+  const add = (key, xOf) => (L[key] || []).forEach((v, i) => hz.push({ key, i, x: xOf(v) }));
+  add('grandmas', v => v); add('crocs', v => v); add('snakes', v => v[0]); add('crabs', v => v[0]);
+  add('bats', v => v[0]); add('gulls', v => v[0]); add('sharks', mid); add('cars', mid);
+  if (!L.dryPools) (L.pools || []).forEach((v, i) => hz.push({ key: 'pools', i, x: mid(v) }));          // the shark in each pool
+  (L.trees || []).forEach((t, i) => { if (t[1] === 'spider') hz.push({ key: 'trees', i, x: t[0] }); });  // redback in a tree
+  hz.sort((a, b) => a.x - b.x);
+  const n = Math.round(hz.length * keep), kept = new Set();
+  for (let k = 0; k < n; k++) { const h = hz[Math.floor((k + 0.5) * hz.length / n)]; kept.add(h.key + ':' + h.i); }
+  const has = (key, i) => kept.has(key + ':' + i), out = { ...L };
+  for (const key of ['grandmas', 'crocs', 'snakes', 'crabs', 'bats', 'gulls', 'sharks', 'cars']) if (L[key]) out[key] = L[key].filter((v, i) => has(key, i));
+  if (!L.dryPools && L.pools) out.sharkPools = L.pools.filter((v, i) => has('pools', i));
+  if (L.trees) out.trees = L.trees.map((t, i) => (t[1] === 'spider' && !has('trees', i) ? [t[0], 0] : t));
+  return out;
+}
+const zoneStartOf = idx => LEVELS.findIndex(l => l.zi === LEVELS[idx].zi);
+
+// ---------------------------------------------------------------- player names and the high-score table (IndexedDB in this browser)
+const NAME_A = ['STINKY', 'SNEAKY', 'WINDY', 'GASSY', 'RUMBLY', 'TOOTIN', 'FUNKY', 'PUFFY', 'SPEEDY', 'BRAVE', 'SQUEAKY', 'BOUNCY'];
+const NAME_B = ['BEAN', 'BADGER', 'PICKLE', 'WOMBAT', 'NUGGET', 'TUBA', 'GOOSE', 'POTATO', 'WALRUS', 'NOODLE', 'TRUMPET', 'MUFFIN'];
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+const randomName = () => { for (;;) { const n = pickOne(NAME_A) + ' ' + pickOne(NAME_B); if (n.length <= 14) return n; } };
+const cleanName = s => s.toUpperCase().replace(/[^A-Z0-9 .'!&-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14);
+const Scores = {
+  mem: [],                                            // used when the browser offers no IndexedDB (private windows, some file:// setups)
+  open() {
+    return this.dbp || (this.dbp = new Promise(res => {
+      try { const r = indexedDB.open('mrfarts', 1); r.onupgradeneeded = () => r.result.createObjectStore('scores', { keyPath: 'id', autoIncrement: true }); r.onsuccess = () => res(r.result); r.onerror = r.onblocked = () => res(null); }
+      catch { res(null); }
+    }));
+  },
+  async all() {
+    const db = await this.open(); if (!db) return this.mem;
+    return new Promise(res => { try { const q = db.transaction('scores').objectStore('scores').getAll(); q.onsuccess = () => res(q.result); q.onerror = () => res(this.mem); } catch { res(this.mem); } });
+  },
+  async add(rec) {
+    const db = await this.open(); if (!db) { rec.id = this.mem.length + 1; this.mem.push(rec); return rec; }
+    return new Promise(res => { try { const tx = db.transaction('scores', 'readwrite'), q = tx.objectStore('scores').add(rec); q.onsuccess = () => { rec.id = q.result; }; tx.oncomplete = () => res(rec); tx.onerror = () => res(rec); } catch { res(rec); } });
+  },
+  async ranked(diffId) { return (await this.all()).filter(r => r.difficulty === diffId).sort((a, b) => b.score - a.score || a.date.localeCompare(b.date)); },
+};
+function renderScores(el, rows, meId, n = 10) {
+  el.innerHTML = '';
+  if (!rows.length) { el.innerHTML = '<p class="empty">No scores yet. Be the first!</p>'; return; }
+  const ol = document.createElement('ol');
+  rows.slice(0, n).forEach((r, i) => {
+    const li = document.createElement('li'); if (r.id === meId) li.className = 'me';
+    const cell = (cls, txt) => { const sp = document.createElement('span'); sp.className = cls; sp.textContent = txt; li.appendChild(sp); };
+    cell('i', String(i + 1).padStart(2, ' ') + '.'); cell('n', r.name); cell('s', String(r.score)); cell('r', r.reached);
+    ol.appendChild(li);
+  });
+  el.appendChild(ol);
+}
 
 // ---------------------------------------------------------------- synthesized audio
 const Snd = {
@@ -265,6 +378,32 @@ const Voice = {
   },
 };
 if ('speechSynthesis' in window) { Voice.pickVoices(); speechSynthesis.onvoiceschanged = () => Voice.pickVoices(); }
+
+// ---------------------------------------------------------------- background music: the theme loops for the whole session
+const Music = {
+  on: true, vol: 0.4, el: null,
+  init() {
+    try { const m = JSON.parse(store.get('mrfarts.music') || '{}'); if (typeof m.on === 'boolean') this.on = m.on; if (typeof m.vol === 'number') this.vol = clamp(m.vol, 0, 1); } catch {}
+    this.el = new Audio('music/mr_farts_theme.wav'); this.el.loop = true; this.el.preload = 'auto';
+    const btn = $('musicBtn'), vol = $('musicVol');
+    btn.onclick = () => { this.toggle(); btn.blur(); };                 // blur so Space (jump) cannot click it again
+    vol.oninput = () => this.setVolume(vol.value / 100);
+    vol.onchange = vol.onpointerup = () => vol.blur();
+    // browsers only allow sound after the player interacts with the page, so start on the first key or click
+    const kick = () => this.start();
+    window.addEventListener('keydown', kick, true); window.addEventListener('pointerdown', kick, true);
+    this.apply();
+  },
+  start() { if (this.on && this.vol > 0 && this.el.paused) this.el.play().catch(() => {}); },
+  toggle() { this.on = !this.on; if (this.on && this.vol === 0) this.vol = 0.4; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
+  setVolume(v) { this.vol = v; if (v > 0 && !this.on) this.on = true; if (v === 0) this.on = false; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
+  apply() {
+    this.el.volume = this.vol;
+    const btn = $('musicBtn'); btn.textContent = this.on ? 'MUSIC ON' : 'MUSIC OFF'; btn.classList.toggle('off', !this.on); btn.setAttribute('aria-pressed', String(this.on));
+    $('musicVol').value = Math.round(this.vol * 100);
+  },
+  save() { store.set('mrfarts.music', JSON.stringify({ on: this.on, vol: this.vol })); },
+};
 
 // ---------------------------------------------------------------- hand-drawn pixel art
 const ART = {
@@ -564,7 +703,7 @@ class Play extends Phaser.Scene {
   preload() { Object.entries(window.SPRITE_DATA).forEach(([k, v]) => { if (!this.textures.exists(k)) this.load.image(k, v); }); }
 
   create() {
-    const L = this.L = LEVELS[this.levelIdx]; T = THEMES[L.zone.theme];
+    const L = this.L = applyDifficulty(LEVELS[this.levelIdx], SAVE.diff); T = THEMES[L.zone.theme];
     this.LEVEL_W = L.len + 80; this.LEVEL_END = L.len;
     this.GROUND = []; let gx = 0; (L.pools || []).forEach(([a, b]) => { this.GROUND.push([gx, a]); gx = b; }); this.GROUND.push([gx, this.LEVEL_W]);
     this.wl = { v: L.waterLevel ?? 20 };
@@ -573,14 +712,62 @@ class Play extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.LEVEL_W, H).setRoundPixels(true);
     this.time_ = 0; this.started = !this.showTitle; this.puffs = []; this.popups = []; this.damaged = false; this.birdsFainted = 0; this.birdsSaved = 0; this.rareFound = null; this.kids = []; this.flames = []; this.birds = []; this.exiting = false; this.moved = false;
     // per-level state: the scene object is reused when a level restarts (level menu, next level), so clear it here
-    this.buttonPressed = false; this.plugPulled = false; this.waterMove = null; this.lastQuip = -9; this.onFloor = false;
+    this.buttonPressed = false; this.plugPulled = false; this.waterMove = null; this.goReady = false; this.lastQuip = -9; this.onFloor = false;
     this.buildBackground(); this.buildWorld(); this.buildEntities(); this.buildAnims(); this.buildInput();
     this.cameras.main.startFollow(this.player, true, 0.15, 0.15, -100, 0);
     $('subtitle').textContent = L.title; $('zone').textContent = L.title;
-    if (this.showTitle) { $('title').classList.remove('hidden'); $('loading').classList.add('hidden'); $('pressStart').classList.remove('hidden'); $('pickHint').classList.remove('hidden'); }
+    if (this.showTitle) { $('title').classList.remove('hidden'); $('loading').classList.add('hidden'); $('startBox').classList.remove('hidden'); this.buildTitle(); }
     else { $('title').classList.add('hidden'); this.showMsg(L.title, 2500); }
     $('pick').classList.toggle('hidden', this.showTitle);
     this.updateHud();
+  }
+  // ---------- title screen: name prompt, difficulty and the high-score table
+  buildTitle() {
+    const box = $('diffs'); box.innerHTML = '';
+    DIFFS.forEach(d => { const b = document.createElement('button'); b.textContent = d.label; b.className = d.id === SAVE.diff ? 'on' : ''; b.onclick = () => this.setDifficulty(d.id); box.appendChild(b); });
+    $('diffNote').textContent = diffOf(SAVE.diff).note;
+    $('hsTitle').textContent = 'HIGH SCORES - ' + diffOf(SAVE.diff).label;
+    Scores.ranked(SAVE.diff).then(rows => renderScores($('hsTable'), rows));
+    const inp = $('nameInput');
+    // the field handles its own keys and stops them reaching Phaser, so typing (space, W, A, S, D) never moves the game
+    inp.onkeydown = e => {
+      e.stopPropagation(); Snd.ensure();
+      if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); this.beginRun(); }
+      else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { e.preventDefault(); this.stepDifficulty(e.code === 'ArrowDown' ? 1 : -1); }
+      else if (e.code === 'BracketLeft' || e.code === 'BracketRight') { e.preventDefault(); this.stepLevel(e.code === 'BracketRight' ? 1 : -1); }
+    };
+    inp.onkeyup = e => e.stopPropagation();
+    setTimeout(() => { if (!this.started) inp.focus(); }, 50);
+  }
+  stepDifficulty(dir) { const i = DIFFS.findIndex(d => d.id === SAVE.diff); this.setDifficulty(DIFFS[clamp(i + dir, 0, DIFFS.length - 1)].id); }
+  stepLevel(dir) { const n = clamp(this.levelIdx + dir, 0, LEVELS.length - 1); if (n !== this.levelIdx) this.scene.restart({ level: n, title: true }); }
+  setDifficulty(id) {
+    if (id === SAVE.diff) { $('nameInput').focus(); return; }
+    SAVE.diff = id; store.set('mrfarts.difficulty', id);
+    this.scene.restart({ level: this.levelIdx, title: true });                 // rebuild the level behind the title with the new hazard count
+  }
+  beginRun() {
+    if (this.started) return;
+    const inp = $('nameInput'); let name = cleanName(inp.value);
+    if (!name) name = randomName();
+    inp.value = name; inp.blur();
+    SAVE.name = name; SAVE.score = 0; SAVE.lives = 5; SAVE.ranked = this.L.li === 0;
+    const P = this.player; P.setData('score', 0); P.setData('lives', 5); P.setData('invuln', 0.5);
+    this.started = true; $('title').classList.add('hidden'); $('pick').classList.remove('hidden');
+    this.updateHud();
+    this.showMsg(SAVE.ranked ? 'GOOD LUCK ' + name + '!' : 'PRACTICE RUN - START A ZONE FOR HIGH SCORES', SAVE.ranked ? 2000 : 3500);
+  }
+  // record the finished run (ranked runs only) and show where it placed
+  async recordRun(tableEl, rankEl) {
+    const score = this.player.getData('score'), label = diffOf(SAVE.diff).label;
+    if (!SAVE.ranked || score <= 0) {
+      rankEl.textContent = SAVE.ranked ? '' : 'PRACTICE RUN - SCORE NOT RECORDED';
+      renderScores(tableEl, await Scores.ranked(SAVE.diff), null, 5); return;
+    }
+    const L = this.L, rec = await Scores.add({ name: SAVE.name || 'MR FARTS', score, difficulty: SAVE.diff, reached: `Z${L.zi + 1} L${L.li + 1}`, date: new Date().toISOString() });
+    const rows = await Scores.ranked(SAVE.diff), pos = rows.findIndex(r => r.id === rec.id) + 1;
+    rankEl.textContent = pos === 1 ? 'NEW HIGH SCORE! #1 ON ' + label : pos && pos <= 10 ? `YOU PLACED #${pos} ON ${label}` : `SCORE SAVED (${label})`;
+    renderScores(tableEl, rows, rec.id, 5);
   }
   groundAt(x) { return this.GROUND.some(([a, b]) => x >= a && x <= b); }
   inWater(x) { return (this.L.water || []).some(([a, b]) => x >= a && x <= b); }
@@ -673,7 +860,7 @@ class Play extends Phaser.Scene {
     this.snakes = (L.snakes || []).map(([x, r]) => { const s = this.physics.add.sprite(x, GY, 'snake', 0).setOrigin(0.5, 1).setDepth(4); s.body.setAllowGravity(false).setSize(22, 7).setOffset(3, 3); s.setData({ home: x, r, dir: 1, alive: true, t: 0 }); return s; });
     this.crabs = (L.crabs || []).map(([x, r]) => { const s = this.physics.add.sprite(x, GY, 'crab', 0).setOrigin(0.5, 1).setDepth(4); s.body.setAllowGravity(false).setSize(14, 6).setOffset(1, 2); s.setData({ home: x, r, dir: 1, alive: true, t: 0 }); return s; });
     this.sharks = [];
-    if (!L.dryPools) (L.pools || []).forEach(([a, b]) => { const s = this.physics.add.sprite((a + b) / 2, GY + 2, 'shark').setOrigin(0.5, 0.5).setDepth(1); s.body.setAllowGravity(false).setSize(34, 12).setOffset(3, 4); s.setData({ a, b, dir: 1, t: rand(0, 4), pool: true, alive: true }); this.sharks.push(s); });
+    if (!L.dryPools) (L.sharkPools ?? L.pools ?? []).forEach(([a, b]) => { const s = this.physics.add.sprite((a + b) / 2, GY + 2, 'shark').setOrigin(0.5, 0.5).setDepth(1); s.body.setAllowGravity(false).setSize(34, 12).setOffset(3, 4); s.setData({ a, b, dir: 1, t: rand(0, 4), pool: true, alive: true }); this.sharks.push(s); });
     (L.sharks || []).forEach(([a, b, y0, y1]) => { const s = this.physics.add.sprite((a + b) / 2, (y0 + y1) / 2, 'shark').setOrigin(0.5, 0.5).setDepth(4); s.body.setAllowGravity(false).setSize(34, 12).setOffset(3, 4); s.setData({ a, b, y0, y1, dir: 1, t: rand(0, 4), pool: false, alive: true }); this.sharks.push(s); });
     this.bats = (L.bats || []).map(([x, y, amp]) => { const s = this.physics.add.sprite(x, y, 'bat', 0).setDepth(4); s.body.setAllowGravity(false).setSize(14, 7).setOffset(2, 1); s.setData({ hx: x, hy: y, amp, t: rand(0, 6), state: 'fly', alive: true }); return s; });
     this.gulls = (L.gulls || []).map(([x, y]) => { const s = this.physics.add.sprite(x, y, 'gull', 0).setDepth(4); s.body.setAllowGravity(false).setSize(12, 6).setOffset(2, 1); s.setData({ hx: x, hy: y, amp: 50, t: rand(0, 6), state: 'fly', alive: true }); return s; });
@@ -732,25 +919,32 @@ class Play extends Phaser.Scene {
     this.input.keyboard.on('keydown', e => {
       Snd.ensure();
       const P = this.player;
-      if (!this.started) {
-        if (e.code === 'Space') { this.started = true; $('title').classList.add('hidden'); P.setData('invuln', 0.5); $('pick').classList.remove('hidden'); }
-        if (e.code === 'BracketLeft' || e.code === 'BracketRight') { const n = clamp(this.levelIdx + (e.code === 'BracketRight' ? 1 : -1), 0, LEVELS.length - 1); if (n !== this.levelIdx) this.scene.restart({ level: n, title: true }); }
+      if (!this.started) {                                       // title screen with the name field not focused
+        if (e.code === 'Enter') this.beginRun();
+        else if (e.code === 'BracketLeft' || e.code === 'BracketRight') this.stepLevel(e.code === 'BracketRight' ? 1 : -1);
+        else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') this.stepDifficulty(e.code === 'ArrowDown' ? 1 : -1);
+        else if (e.key && e.key.length === 1) $('nameInput').focus();
         return;
       }
-      if (P.getData('dead') && e.code === 'Enter') { SAVE.score = 0; SAVE.lives = 5; $('gameover').classList.add('hidden'); this.scene.restart({ level: this.levelIdx, title: false }); return; }
+      if (P.getData('dead') && this.goReady && (e.code === 'Enter' || e.code === 'Escape')) {
+        // out of lives: no continuing this level, the run starts again from the first level of the zone
+        const zs = zoneStartOf(this.levelIdx); SAVE.score = 0; SAVE.lives = 5; SAVE.ranked = true; $('gameover').classList.add('hidden');
+        this.scene.restart({ level: zs, title: e.code === 'Escape' }); return;
+      }
       if (P.getData('won') && e.code === 'Enter' && this.winReady) {
         $('win').classList.add('hidden');
         if (this.levelIdx + 1 < LEVELS.length) this.scene.restart({ level: this.levelIdx + 1, title: false });
-        else { SAVE.score = 0; SAVE.lives = 5; this.scene.restart({ level: 0, title: true }); }
+        else { SAVE.score = 0; SAVE.lives = 5; $('nameInput').value = ''; this.scene.restart({ level: 0, title: true }); }
         return;
       }
+      if (e.code === 'KeyM' && !e.repeat) { Music.toggle(); return; }
       if (!e.repeat && (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW')) P.setData('jumpBuf', 0.12);
     });
     this.input.keyboard.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT']);
     // level picker (HUD button, shown until the player moves off the start)
     $('pick').onclick = () => {
       const list = $('levelList'); list.innerHTML = '';
-      LEVELS.forEach((l, i) => { const b = document.createElement('button'); b.textContent = (i === this.levelIdx ? '> ' : '  ') + l.title; b.onclick = () => { $('levels').classList.add('hidden'); this.scene.restart({ level: i, title: false }); }; list.appendChild(b); });
+      LEVELS.forEach((l, i) => { const b = document.createElement('button'); b.textContent = (i === this.levelIdx ? '> ' : '  ') + l.title; b.onclick = () => { $('levels').classList.add('hidden'); SAVE.score = 0; SAVE.lives = 5; SAVE.ranked = l.li === 0; this.scene.restart({ level: i, title: false }); }; list.appendChild(b); });
       $('levels').classList.remove('hidden');
     };
   }
@@ -773,6 +967,7 @@ class Play extends Phaser.Scene {
   updateHud() {
     const P = this.player, d = k => P.getData(k);
     $('score').textContent = 'SCORE ' + d('score');
+    $('player').textContent = this.started && SAVE.name ? SAVE.name + ' - ' + diffOf(SAVE.diff).label + (SAVE.ranked ? '' : ' - PRACTICE') : '';
     $('lives').textContent = '♥'.repeat(Math.max(0, d('lives'))) + '♡'.repeat(Math.max(0, 5 - d('lives')));
     $('power').textContent = d('gasOff') > 0 ? `NO GAS ${d('gasOff').toFixed(1)}` : d('boosts') > 0 ? `BOOST x${d('boosts')}` : 'FIND BEANS';
     $('progress').querySelector('i').style.width = clamp(P.x / this.LEVEL_END * 100, 0, 100) + '%';
@@ -785,7 +980,13 @@ class Play extends Phaser.Scene {
     P.setData('lives', P.getData('lives') - 1); P.setData('invuln', 2); Snd.hurt(); this.updateHud();
     if (reason === 'water') line = T.fallLine;
     if (line) Voice.say(line, 0.7, { force: true, rate: 1.1 });
-    if (P.getData('lives') <= 0) { P.setData('dead', true); P.setVelocity(0, -300); $('goScore').textContent = 'SCORE ' + P.getData('score'); setTimeout(() => $('gameover').classList.remove('hidden'), 900); return; }
+    if (P.getData('lives') <= 0) {
+      P.setData('dead', true); P.setVelocity(0, -300); this.goReady = false;
+      $('goScore').textContent = 'SCORE ' + P.getData('score'); $('goRank').textContent = ''; $('goTable').innerHTML = '';
+      $('goNext').textContent = 'PRESS ENTER TO RESTART ' + LEVELS[zoneStartOf(this.levelIdx)].title.replace(/ - LEVEL 1$/, '');
+      this.recordRun($('goTable'), $('goRank'));
+      setTimeout(() => { $('gameover').classList.remove('hidden'); this.goReady = true; }, 900); return;
+    }
     if (reason === 'water') { Snd.splash(); this.respawn(); this.showMsg(T.fallMsg, 1200); }
     else { P.setVelocity(P.getData('facing') > 0 ? -160 : 160, -320); this.showMsg(reason, 1300); }
   }
@@ -815,6 +1016,8 @@ class Play extends Phaser.Scene {
     $('winLines').innerHTML = lines.map(([t, n]) => `<li>${t} <b>+${n}</b></li>`).join('') + (this.rareFound ? `<li>MUSEUM PIECE: ${this.rareFound} <b>✓</b></li>` : '<li style="color:#8a94a8">MUSEUM PIECE NOT FOUND</li>');
     $('winScore').textContent = 'SCORE ' + P.getData('score');
     $('winNext').textContent = last ? 'PRESS ENTER TO PLAY AGAIN' : `PRESS ENTER FOR ${LEVELS[this.levelIdx + 1].title}`;
+    $('winRank').classList.toggle('hidden', !last); $('winTable').classList.toggle('hidden', !last);
+    if (last) { $('winRank').textContent = ''; $('winTable').innerHTML = ''; this.recordRun($('winTable'), $('winRank')); }
     setTimeout(() => { $('win').classList.remove('hidden'); this.winReady = true; }, 1600);
   }
   pressButton() {
@@ -1099,6 +1302,7 @@ class Play extends Phaser.Scene {
 }
 
 // ---------------------------------------------------------------- boot
+Music.init();
 const startLevel = clamp(parseInt(new URLSearchParams(location.search).get('level') || '1', 10) - 1, 0, LEVELS.length - 1);
 const game = new Phaser.Game({
   type: Phaser.AUTO, parent: 'game', width: W, height: H, pixelArt: true, roundPixels: true, backgroundColor: '#05050a',
