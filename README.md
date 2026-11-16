@@ -6,7 +6,7 @@ A Mario-style pixel-art side-scroller built on **Phaser 3** (arcade physics), ru
 | Zone | Levels | Hazards | Treats |
 |---|---|---|---|
 | 1 The Park | 3 (ends down a pipe) | grandmas, crocs, snakes, shark pools, redbacks | pancakes, bananas |
-| 2 The Sewer | 3 (level 1 ends by pressing the flood button; level 2 is flooded until you pull the plug; level 3 half flooded, ends up a pipe) | bats, crocs, sharks | pizza, donuts |
+| 2 The Sewer | 3 (level 1 ends by pressing the flood button; level 2 is flooded until you pull the plug; level 3 is drained, ends up a pipe) | bats, crocs, sharks | pizza, donuts |
 | 3 The City | 3 (generated rooftop chains joined by crane beams; finish on the road or on the last rooftop) | cars (flashing sign + honk before they arrive), pits, grandmas | hot dogs, coffee |
 | 4 The Beach | 2 | crabs, seagulls, sharks | ice cream, fish & chips |
 
