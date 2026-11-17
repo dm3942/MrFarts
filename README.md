@@ -46,7 +46,7 @@ Jump to a level with `index.html?level=7`, press `[` / `]` on the title screen, 
 | M | music on / off (or use the MUSIC button and volume slider in the bottom-left corner) |
 
 ## Music
-The theme (`music/mr_farts_theme.wav`) loops in the background from the first key press or click (browsers don't allow sound before that). The MUSIC button, the volume slider and the on/off choice are remembered in this browser.
+The theme (`music/mr_farts_theme.wav`) loops in the background from the first key press or click (browsers don't allow sound before that). The volume slider tops out at 15% of the recording so sound effects and voices stay clear; the slider level and the on/off choice are remembered in this browser.
 
 ## Files
 * `index.html` – the whole game: level layout, hand-drawn pixel art (croc, shark, snake, redback, items, torches, tiles), AI, audio.

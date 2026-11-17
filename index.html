@@ -380,10 +380,16 @@ const Voice = {
 if ('speechSynthesis' in window) { Voice.pickVoices(); speechSynthesis.onvoiceschanged = () => Voice.pickVoices(); }
 
 // ---------------------------------------------------------------- background music: the theme loops for the whole session
+// The slider runs 0-100%, and 100% plays the file at MUSIC_MAX so the sound effects and voices stay clear over it.
+const MUSIC_MAX = 0.15;
 const Music = {
-  on: true, vol: 0.4, el: null,
+  on: true, vol: 1, el: null,                         // vol = slider position (0..1)
   init() {
-    try { const m = JSON.parse(store.get('mrfarts.music') || '{}'); if (typeof m.on === 'boolean') this.on = m.on; if (typeof m.vol === 'number') this.vol = clamp(m.vol, 0, 1); } catch {}
+    try {
+      const m = JSON.parse(store.get('mrfarts.music') || '{}'); if (typeof m.on === 'boolean') this.on = m.on;
+      if (typeof m.level === 'number') this.vol = clamp(m.level, 0, 1);
+      else if (typeof m.vol === 'number') this.vol = clamp(m.vol / MUSIC_MAX, 0, 1);   // older saves held the raw volume
+    } catch {}
     this.el = new Audio('music/mr_farts_theme.wav'); this.el.loop = true; this.el.preload = 'auto';
     const btn = $('musicBtn'), vol = $('musicVol');
     btn.onclick = () => { this.toggle(); btn.blur(); };                 // blur so Space (jump) cannot click it again
@@ -395,14 +401,14 @@ const Music = {
     this.apply();
   },
   start() { if (this.on && this.vol > 0 && this.el.paused) this.el.play().catch(() => {}); },
-  toggle() { this.on = !this.on; if (this.on && this.vol === 0) this.vol = 0.4; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
+  toggle() { this.on = !this.on; if (this.on && this.vol === 0) this.vol = 1; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
   setVolume(v) { this.vol = v; if (v > 0 && !this.on) this.on = true; if (v === 0) this.on = false; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
   apply() {
-    this.el.volume = this.vol;
+    this.el.volume = this.vol * MUSIC_MAX;
     const btn = $('musicBtn'); btn.textContent = this.on ? 'MUSIC ON' : 'MUSIC OFF'; btn.classList.toggle('off', !this.on); btn.setAttribute('aria-pressed', String(this.on));
     $('musicVol').value = Math.round(this.vol * 100);
   },
-  save() { store.set('mrfarts.music', JSON.stringify({ on: this.on, vol: this.vol })); },
+  save() { store.set('mrfarts.music', JSON.stringify({ on: this.on, level: this.vol })); },
 };
 
 // ---------------------------------------------------------------- hand-drawn pixel art
