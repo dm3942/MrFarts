@@ -32,8 +32,18 @@ Scores are kept in this browser (IndexedDB), with a separate top-ten table for e
 Jump to a level with `index.html?level=7`, press `[` / `]` on the title screen, or use the small LEVEL button in the top-right corner at the start of any level. A jump from the LEVEL menu starts a fresh run.
 
 ## Play
+* Online, on a computer, phone or tablet: https://dm3942.github.io/MrFarts/
 * Double-click `play.bat` (starts a tiny local web server and opens the game), **or**
 * open `index.html` directly in Chrome / Edge.
+
+## Touch screens
+On a phone or tablet the game shows on-screen buttons while you play: **◀ ▶** to run (bottom-left), **JUMP** and **▼** crouch (bottom-right). Tap JUMP again in mid-air for the fart boost. Each finger is tracked on its own, so you can hold a direction while tapping JUMP, and slide a thumb from ◀ to ▶ without lifting it.
+
+* Every screen can be tapped: **START** / **RANDOM NAME** and the **< >** level arrows on the title, **RESTART ZONE** / **CHANGE PLAYER** after game over, and tap anywhere to carry on after a level.
+* The game plays in landscape. Held upright, it pauses behind a "turn your device sideways" screen.
+* **FULL SCREEN** (top of the screen) hides the browser bars where the browser allows it. On iPhone use Share → **Add to Home Screen**, which opens the game full screen from its own icon.
+* Sound starts on the first tap. On iPhone and iPad the music volume runs through Web Audio, because Safari ignores the volume setting on audio elements.
+* The buttons switch on with the first touch and hide again when you play with the arrow keys. Add `?touch=1` to the address to force them on (for testing on a computer) or `?touch=0` to force them off.
 
 ## Controls
 | Key | Action |
@@ -43,7 +53,7 @@ Jump to a level with `index.html?level=7`, press `[` / `]` on the title screen, 
 | ↓ / S | crouch |
 | Enter | start (title screen) / next level / restart the zone after game over |
 | Esc | after game over: back to the title screen |
-| M | music on / off (or use the MUSIC button and volume slider in the bottom-left corner) |
+| M | music on / off (or use the MUSIC button and volume slider in the bottom-left corner; on touch screens they move to the top while you play) |
 
 ## Music
 The theme (`music/mr_farts_theme.wav`) loops in the background from the first key press or click (browsers don't allow sound before that). The volume slider tops out at 15% of the recording so sound effects and voices stay clear; the slider level and the on/off choice are remembered in this browser.
@@ -51,6 +61,7 @@ The theme (`music/mr_farts_theme.wav`) loops in the background from the first ke
 ## Files
 * `index.html` – the whole game: level layout, hand-drawn pixel art (croc, shark, snake, redback, items, torches, tiles), AI, audio.
 * `sprites.js` – Mr Farts / Grandma / kids as low-res pixel sprites, base64-packed (generated).
+* `manifest.webmanifest`, `icons/` – lets phones add the game to the home screen as a full-screen app.
 * `lib/` – Phaser 3.80.1 and the Press Start 2P font, bundled locally so the game runs offline.
 * `sprites/` – full-size transparent cut-outs from the original `.jpg` sheets; `pixel/` – their pixelated versions.
 * `tools_slice_sprites.py` → `sprites/`, then `tools_pixelate.py` → `pixel/` + `sprites.js`.
