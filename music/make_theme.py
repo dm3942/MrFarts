@@ -23,6 +23,10 @@ STEP_S = 60.0 / BPM / 4.0                    # one sixteenth in seconds
 LOOP_N = int(round(STEPS * STEP_S * SR))      # loop length in samples (exact integer)
 STEP_N = LOOP_N / STEPS                       # samples per step (positions are rounded)
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mr_farts_theme.wav")
+# Peak level of the rendered file. The old -1 dBFS master turned down to 15% (-16.5 dB) gave -17.5 dBFS; that was
+# then halved again (-6 dB, 7.5% of the old master) so the game's sound effects and voices stay clear. The game plays
+# the file at up to 100%, so the quiet level is baked in here (iPhones ignore volume settings on audio elements).
+PEAK_DB = -23.5
 
 rng = np.random.default_rng(7)
 
@@ -372,11 +376,11 @@ def convolve(x, h):
 revL = convolve(fxL + 0.3 * echoL, ir); revR = convolve(fxR + 0.3 * echoR, ir)
 mixL += 0.09 * revR; mixR += 0.09 * revL          # cross-feed for width
 
-# gentle glue: soft clip, then normalise the kept copy to -1 dBFS
+# gentle glue: soft clip, then normalise the kept copy to PEAK_DB
 L = mixL[LOOP_N:2 * LOOP_N]; R = mixR[LOOP_N:2 * LOOP_N]
 L = np.tanh(L * 1.15) / np.tanh(1.15); R = np.tanh(R * 1.15) / np.tanh(1.15)
 peak = max(np.abs(L).max(), np.abs(R).max())
-g = 10 ** (-1 / 20) / peak
+g = 10 ** (PEAK_DB / 20) / peak
 L *= g; R *= g
 
 data = np.empty(2 * LOOP_N, dtype="<i2")
@@ -385,6 +389,22 @@ data[1::2] = np.clip(np.round(R * 32767), -32768, 32767).astype("<i2")
 with wave.open(OUT, "wb") as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(data.tobytes())
 
+# MP3 copy for the game (about a tenth of the WAV's size); needs `pip install lameenc`.
+# MP3 encoders add a little silence at both ends, which would leave a gap each time the loop restarts. So the MP3
+# holds MP3_PAD extra frames of the loop's own tail before it and its head after it, and the game loops exactly
+# the 30 s that starts MP3_PAD frames in (index.html: THEME.start = 4096 / 44100). Keep the two numbers in step.
+MP3 = OUT[:-4] + ".mp3"
+MP3_PAD = 4096
+try:
+    import lameenc
+    frames = data.reshape(-1, 2)
+    padded = np.concatenate([frames[-MP3_PAD:], frames, frames[:MP3_PAD]])
+    enc = lameenc.Encoder(); enc.set_bit_rate(160); enc.set_in_sample_rate(SR); enc.set_channels(2); enc.set_quality(2)
+    with open(MP3, "wb") as f: f.write(enc.encode(padded.tobytes()) + enc.flush())
+    print(f"wrote {MP3}: {os.path.getsize(MP3) / 1e6:.2f} MB")
+except ImportError:
+    print("lameenc not installed: skipped the MP3 (pip install lameenc)")
+
 rms = 20 * np.log10(np.sqrt(np.mean((L ** 2 + R ** 2) / 2)))
-print(f"wrote {OUT}: {LOOP_N / SR:.2f} s, peak -1.0 dBFS, rms {rms:.1f} dBFS, pre-clip peak {peak:.2f}")
+print(f"wrote {OUT}: {LOOP_N / SR:.2f} s, peak {PEAK_DB:.1f} dBFS, rms {rms:.1f} dBFS, pre-clip peak {peak:.2f}")
 print(f"loop seam: last sample L={L[-1]:+.4f} R={R[-1]:+.4f}  first sample L={L[0]:+.4f} R={R[0]:+.4f}")

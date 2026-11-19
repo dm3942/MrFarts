@@ -42,7 +42,7 @@ On a phone or tablet the game shows on-screen buttons while you play: **◀ ▶*
 * Every screen can be tapped: **START** / **RANDOM NAME** and the **< >** level arrows on the title, **RESTART ZONE** / **CHANGE PLAYER** after game over, and tap anywhere to carry on after a level.
 * The game plays in landscape. Held upright, it pauses behind a "turn your device sideways" screen.
 * **FULL SCREEN** (top of the screen) hides the browser bars where the browser allows it. On iPhone use Share → **Add to Home Screen**, which opens the game full screen from its own icon.
-* Sound starts on the first tap. On iPhone and iPad the music volume runs through Web Audio, because Safari ignores the volume setting on audio elements.
+* Sound starts on the first tap.
 * The buttons switch on with the first touch and hide again when you play with the arrow keys. Add `?touch=1` to the address to force them on (for testing on a computer) or `?touch=0` to force them off.
 
 ## Controls
@@ -56,11 +56,16 @@ On a phone or tablet the game shows on-screen buttons while you play: **◀ ▶*
 | M | music on / off (or use the MUSIC button and volume slider in the bottom-left corner; on touch screens they move to the top while you play) |
 
 ## Music
-The theme (`music/mr_farts_theme.wav`) loops in the background from the first key press or click (browsers don't allow sound before that). The volume slider tops out at 15% of the recording so sound effects and voices stay clear; the slider level and the on/off choice are remembered in this browser.
+The theme loops in the background from the first key press or tap (browsers don't allow sound before that). The slider level and the on/off choice are remembered in this browser.
+
+* **Level:** the theme is rendered quiet (peaks at -23.5 dBFS, about 7% of full scale) so sound effects and voices stay clear over it, and the slider runs 0–100% of that. The level is in the file itself, so it is right even on iPhones, which ignore volume settings on audio elements.
+* **Files:** `python music/make_theme.py` renders `mr_farts_theme.mp3` (0.6 MB), which is what the game plays, plus `mr_farts_theme.wav`, the lossless master used by `analyze.py` and the music preview page. It needs `pip install lameenc`. Change `PEAK_DB` in the script to make it louder or quieter.
+* **Gapless loop:** MP3 encoders add a little silence at each end, so the MP3 holds about 0.1 s of extra audio before and after the 30-second loop, and the game loops exactly the middle 30 seconds with Web Audio. Opened straight from disk (`file://`), the page can't load it that way and plays the MP3 with a plain looping `<audio>` element, which hiccups slightly at the loop point.
 
 ## Files
 * `index.html` – the whole game: level layout, hand-drawn pixel art (croc, shark, snake, redback, items, torches, tiles), AI, audio.
 * `sprites.js` – Mr Farts / Grandma / kids as low-res pixel sprites, base64-packed (generated).
+* `sounds/` – the voice clips as MP3s. To add one, drop the recording in as a WAV, run `python tools_wav_to_mp3.py` (converts every WAV there to MP3 and deletes the WAV; `--keep` keeps it), then add the `.mp3` name to `Voice.clips` in `index.html`. Lines without a clip use the browser's text-to-speech.
 * `manifest.webmanifest`, `icons/` – lets phones add the game to the home screen as a full-screen app.
 * `lib/` – Phaser 3.80.1 and the Press Start 2P font, bundled locally so the game runs offline.
 * `sprites/` – full-size transparent cut-outs from the original `.jpg` sheets; `pixel/` – their pixelated versions.

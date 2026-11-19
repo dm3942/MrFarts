@@ -403,31 +403,31 @@ const Voice = {
     const pref = [/child|kid|junior/i, /zira|aria|jenny|samantha|female|woman|girl/i, /en/i];
     for (const re of pref) { const v = vs.find(v => re.test(v.name) || re.test(v.lang)); if (v) { this.kidVoice = v; break; } }
   },
-  // recorded clips (sounds/*.wav) replace text-to-speech for these lines; several files = random pick.
+  // recorded clips (sounds/*.mp3) replace text-to-speech for these lines; several files = random pick.
   // A file that is missing or fails to load falls back to text-to-speech.
   clips: {
-    'farty power!': ['farty_power.wav'],
-    'stinky!': ['stinky_v1.wav', 'stinky_v2.wav'],
-    'i think i pooped my pants': ['I_think_i_pooped_my_pants.wav'],
-    'extra life!': ['extra_life.wav'],
-    'plug pulled!': ['plug_pulled.wav'],
-    'big diamond!': ['big_diamond.wav'],
-    'famous painting!': ['famous_painting.wav'],
-    'jewelled crown!': ['jewelled_crown.wav'],
-    'dinosaur bone!': ['dinosaur_bone.wav'],
-    'treasure chest!': ['treasure_chest.wav'],
-    'mummy!': ['mummy.wav'],
-    'gold bars!': ['gold_bars.wav'],
-    'marble statue!': ['marble_statue.wav'],
-    'ancient vase!': ['ancient_vase.wav'],
-    'pharaoh mask!': ['pharaoh_mask.wav'],
-    'silver trophy!': ['silver_trophy.wav'],
-    'somebody farted!': ['somebody_farted.wav'],
-    'ouch! crocodile!': ['crocodile.wav'],
-    'shark!': ['shark.wav'],
-    'ouch! snake!': ['snake.wav'],
-    'ouch! bat!': ['bat.wav'],
-    'uh oh! flooding!': ['oh_no_flood.wav'],
+    'farty power!': ['farty_power.mp3'],
+    'stinky!': ['stinky_v1.mp3', 'stinky_v2.mp3'],
+    'i think i pooped my pants': ['I_think_i_pooped_my_pants.mp3'],
+    'extra life!': ['extra_life.mp3'],
+    'plug pulled!': ['plug_pulled.mp3'],
+    'big diamond!': ['big_diamond.mp3'],
+    'famous painting!': ['famous_painting.mp3'],
+    'jewelled crown!': ['jewelled_crown.mp3'],
+    'dinosaur bone!': ['dinosaur_bone.mp3'],
+    'treasure chest!': ['treasure_chest.mp3'],
+    'mummy!': ['mummy.mp3'],
+    'gold bars!': ['gold_bars.mp3'],
+    'marble statue!': ['marble_statue.mp3'],
+    'ancient vase!': ['ancient_vase.mp3'],
+    'pharaoh mask!': ['pharaoh_mask.mp3'],
+    'silver trophy!': ['silver_trophy.mp3'],
+    'somebody farted!': ['somebody_farted.mp3'],
+    'ouch! crocodile!': ['crocodile.mp3'],
+    'shark!': ['shark.mp3'],
+    'ouch! snake!': ['snake.mp3'],
+    'ouch! bat!': ['bat.mp3'],
+    'uh oh! flooding!': ['oh_no_flood.mp3'],
   },
   missing: new Set(), audio: null, el: null, tok: 0, unlocked: false,
   // iPhones only let a page play sound from an element (or speak) that first played during a tap, so prime both on the first touch
@@ -460,36 +460,68 @@ const Voice = {
 if ('speechSynthesis' in window) { Voice.pickVoices(); speechSynthesis.onvoiceschanged = () => Voice.pickVoices(); }
 
 // ---------------------------------------------------------------- background music: the theme loops for the whole session
-// The slider runs 0-100%, and 100% plays the file at MUSIC_MAX so the sound effects and voices stay clear over it.
-const MUSIC_MAX = 0.15;
-const FIXED_VOLUME = (() => { try { const a = new Audio(); a.volume = 0.5; return a.volume !== 0.5; } catch { return false; } })();
+// The quiet level is baked into the file (music/make_theme.py renders it at -23.5 dBFS, about 7% of full scale) so the sound effects and
+// voices stay clear; the slider runs 0-100% of that.
+// The MP3 carries 4096 extra frames of the loop's own tail before it and its head after it, so the silence an MP3
+// encoder adds at both ends never falls inside the 30 s that Web Audio loops, and the seam is gapless everywhere.
+// Opened straight from disk (file://) the page cannot fetch the MP3, so it plays it with a looping <audio> element
+// instead (the seam hiccups slightly there, because the element plays the padding too).
+const THEME = { mp3: 'music/mr_farts_theme.mp3', start: 4096 / 44100, length: 30 };
 const Music = {
-  on: true, vol: 1, el: null, gain: null,             // vol = slider position (0..1)
+  on: true, vol: 1,                                   // vol = slider position (0..1)
+  data: null, buf: null, loading: null, failed: false, gain: null, src: null, pos: 0, t0: 0, el: null,
   init() {
     try {
       const m = JSON.parse(store.get('mrfarts.music') || '{}'); if (typeof m.on === 'boolean') this.on = m.on;
       if (typeof m.level === 'number') this.vol = clamp(m.level, 0, 1);
-      else if (typeof m.vol === 'number') this.vol = clamp(m.vol / MUSIC_MAX, 0, 1);   // older saves held the raw volume
+      else if (typeof m.vol === 'number') this.vol = clamp(m.vol / 0.15, 0, 1);       // older saves held the raw volume of the loud file
     } catch {}
-    this.el = new Audio('music/mr_farts_theme.wav'); this.el.loop = true; this.el.preload = 'auto';
+    // download the MP3 straight away; it is decoded once the first key press or tap creates the audio context
+    if (location.protocol === 'file:' || !window.fetch) this.failed = true;
+    else this.data = fetch(THEME.mp3).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null);
     const btn = $('musicBtn'), vol = $('musicVol');
     btn.onclick = () => { this.toggle(); btn.blur(); };                 // blur so Space (jump) cannot click it again
     vol.oninput = () => this.setVolume(vol.value / 100);
     vol.onchange = vol.onpointerup = () => vol.blur();
     // browsers only allow sound after the player interacts with the page, so start on the first key or click
-    const kick = () => this.start();
+    const kick = () => { Snd.ensure(); this.start(); };
     window.addEventListener('keydown', kick, true); window.addEventListener('pointerdown', kick, true);
     this.apply();
   },
-  route() {
-    if (this.gain || !FIXED_VOLUME || location.protocol === 'file:' || !Snd.ctx) return;
-    try { this.gain = Snd.ctx.createGain(); Snd.ctx.createMediaElementSource(this.el).connect(this.gain).connect(Snd.ctx.destination); this.apply(); } catch { this.gain = null; }
+  wanted() { return this.on && this.vol > 0; },
+  load() {
+    if (!this.loading) this.loading = (async () => {
+      const ab = await this.data; if (!ab || !Snd.ctx) throw new Error('no music data');
+      const buf = await new Promise((ok, bad) => Snd.ctx.decodeAudioData(ab, ok, bad));      // callback form also works in older Safari
+      this.gain = Snd.ctx.createGain(); this.gain.connect(Snd.ctx.destination); this.buf = buf; this.apply();
+    })().then(() => true, () => { this.failed = true; return false; });
+    return this.loading;
   },
-  start() { if (this.on && this.vol > 0 && this.el.paused) this.el.play().catch(() => {}); },
-  toggle() { this.on = !this.on; if (this.on && this.vol === 0) this.vol = 1; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
-  setVolume(v) { this.vol = v; if (v > 0 && !this.on) this.on = true; if (v === 0) this.on = false; this.save(); this.apply(); if (this.on) this.start(); else this.el.pause(); },
+  start() {
+    if (!this.wanted()) return;
+    if (this.buf) this.playLoop();
+    else if (this.failed) this.playElement();
+    else this.load().then(ok => { if (this.wanted()) ok ? this.playLoop() : this.playElement(); });
+  },
+  playLoop() {
+    if (this.src) return;
+    const ctx = Snd.ctx, s = ctx.createBufferSource(), at = this.pos % THEME.length;
+    s.buffer = this.buf; s.loop = true; s.loopStart = THEME.start; s.loopEnd = THEME.start + THEME.length;
+    s.connect(this.gain); s.start(0, THEME.start + at); this.t0 = ctx.currentTime - at; this.src = s;
+  },
+  playElement() {
+    if (!this.el) { this.el = new Audio(THEME.mp3); this.el.loop = true; this.apply(); }
+    if (this.el.paused) this.el.play().catch(() => {});
+  },
+  pause() {
+    if (this.src) { this.pos = (Snd.ctx.currentTime - this.t0) % THEME.length; try { this.src.stop(); } catch {} this.src.disconnect(); this.src = null; }   // resume from here later
+    if (this.el) this.el.pause();
+  },
+  toggle() { this.on = !this.on; if (this.on && this.vol === 0) this.vol = 1; this.save(); this.apply(); if (this.on) this.start(); else this.pause(); },
+  setVolume(v) { this.vol = v; if (v > 0 && !this.on) this.on = true; if (v === 0) this.on = false; this.save(); this.apply(); if (this.on) this.start(); else this.pause(); },
   apply() {
-    if (this.gain) this.gain.gain.value = this.vol * MUSIC_MAX; else this.el.volume = this.vol * MUSIC_MAX;
+    if (this.gain) this.gain.gain.value = this.vol;
+    if (this.el) this.el.volume = this.vol;
     const btn = $('musicBtn'); btn.textContent = this.on ? 'MUSIC ON' : 'MUSIC OFF'; btn.classList.toggle('off', !this.on); btn.setAttribute('aria-pressed', String(this.on));
     $('musicVol').value = Math.round(this.vol * 100);
   },
